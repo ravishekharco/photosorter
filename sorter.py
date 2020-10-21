@@ -158,13 +158,14 @@ def resolve_duplicate(path: str) -> str:
 
 def is_valid_filename(path: str) -> bool:
     ext = os.path.splitext(path)[1].lower()
-    return ext in ['.jpg', '.jpeg', '.png', '.mov']
+    return ext in ['.jpg', '.jpeg', '.heic', '.png', '.mov', '.mp4', '.3fr', '.ari', '.arw', '.bay', '.braw', '.crw', '.cr2', '.cr3', '.cap', '.data', '.dcs', '.dcr', '.dng', '.drf', '.eip', '.erf', '.fff', '.gpr', '.iiq', '.k25', '.kdc', '.mdc', '.mef', '.mos', '.mrw', '.nef', '.nrw', '.obm', '.orf', '.pef', '.ptx', '.pxn', '.r3d', '.raf', '.raw', '.rwl', '.rw2', '.rwz', '.sr2', '.srf', '.srw', '.tif', '.x3f']
 
 
 def dest_path(root_folder: str, path: str) -> str:
     cdate = creation_date(path)
     path = path_from_datetime(root_folder, cdate, path)
-    return resolve_duplicate(path)
+    response = resolve_duplicate(path)
+    return response
 
 
 def path_from_datetime(root_folder: str, dt: datetime.datetime,
@@ -182,8 +183,22 @@ def filename_from_datetime(dt: datetime.datetime, path: str) -> str:
     """
     Returns basename + original extension.
     """
+    prefix = suffix = ''
     base = basename_from_datetime(dt)
     ext = os.path.splitext(path)[1]
+    try:
+        suffix = path.split('/')[-1].split('.')[0]
+    except:
+        pass
+    try:
+        if ext.lower() in ['.3fr', '.ari', '.arw', '.bay', '.braw', '.crw', '.cr2', '.cr3', '.cap', '.data', '.dcs', '.dcr', '.dng', '.drf', '.eip', '.erf', '.fff', '.gpr', '.iiq', '.k25', '.kdc', '.mdc', '.mef', '.mos', '.mrw', '.nef', '.nrw', '.obm', '.orf', '.pef', '.ptx', '.pxn', '.r3d', '.raf', '.raw', '.rwl', '.rw2', '.rwz', '.sr2', '.srf', '.srw', '.tif', '.x3f']:
+            prefix = "RAW_%s" % (ext.upper().split(".")[-1])
+    except:
+        pass
+    if prefix:
+        base = "%s %s" % (prefix, base)
+    if suffix:
+        base = "%s %s" % (base, suffix)
     return base + ext.lower()
 
 
@@ -236,7 +251,6 @@ class MissingExifTimestampError(Exception):
 def exif_creation_timestamp(path: str) -> str:
     with open(path, 'rb') as f:
         tags = exifread.process_file(f, details=False)
-
     if 'EXIF DateTimeOriginal' in tags:
         return str(tags['EXIF DateTimeOriginal'])
     elif 'EXIF DateTimeDigitized' in tags:
